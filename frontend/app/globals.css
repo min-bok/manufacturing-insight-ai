@@ -482,34 +482,48 @@ tr:last-child td {
 }
 
 .report-block {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-soft);
-  padding: 12px;
+  border: 1px dashed transparent;
+  border-radius: 10px;
+  background: transparent;
+  padding: 4px;
 }
 
 .report-block-header {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .block-type {
-  display: block;
-  color: var(--muted);
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  background: #eef4ff;
+  color: #24456f;
+  border: 1px solid #c9d9f2;
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 800;
   text-transform: uppercase;
-  margin-bottom: 3px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .block-title-wrap {
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .block-title-wrap h3 {
-  cursor: text;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
 }
 
 .block-title-input {
@@ -705,15 +719,14 @@ tr:last-child td {
 
 .report-block {
   min-width: 0;
-  min-height: 120px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-soft);
-  padding: 12px;
+  border: 1px dashed transparent;
+  border-radius: 10px;
+  background: transparent;
+  padding: 4px;
 }
 
 .report-block:hover {
-  border-color: #b9d6e3;
+  border-color: #cfe4ee;
 }
 
 .report-block-header {
@@ -917,6 +930,7 @@ tr:last-child td {
 
 .report-block.drop-combine-over {
   border-color: var(--primary);
+  border-style: solid;
   background: #f3f9fc;
   box-shadow: 0 0 0 3px rgba(20, 108, 148, 0.12);
 }
@@ -1018,6 +1032,7 @@ tr:last-child td {
 
 .report-block.drop-combine-blocked {
   border-color: #f59e0b;
+  border-style: solid;
   background: #fff7ed;
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.16);
 }

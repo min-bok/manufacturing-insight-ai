@@ -78,8 +78,9 @@ def _render_block(parts: list[str], images: list, block: Any, col_w: int) -> Non
     if t in {"answer", "summary", "recommendation", "suggestions", "title"}:
         _append_text(parts, c)
     elif t == "kpi":
-        for m in (c.get("metrics") or []):
-            parts.append(_p(f"{m.get('label')}: {m.get('value')}"))
+        metrics = c.get("metrics") or []
+        if metrics:
+            parts.append(_kpi_table(metrics, col_w))
     elif t == "chart":
         _render_chart(parts, images, c, col_w)
     elif t == "table":
@@ -89,6 +90,77 @@ def _render_block(parts: list[str], images: list, block: Any, col_w: int) -> Non
     # Word requires at least one <w:p> per table cell — guarantee it
     if not parts or not parts[-1].startswith("<w:p"):
         parts.append(_p(""))
+
+
+def _kpi_table(metrics: list[dict], col_w: int) -> str:
+    """Render KPI metrics as a 2-column Word table matching the UI metric-card grid."""
+    cell_w = col_w // 2
+    cell_border = "".join(
+        f'<w:{s} w:val="single" w:sz="4" w:space="0" w:color="DFE6EF"/>'
+        for s in ("top", "left", "bottom", "right")
+    )
+    tbl_no_border = "".join(
+        f'<w:{s} w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+        for s in ("top", "left", "bottom", "right", "insideH", "insideV")
+    )
+
+    def _kpi_cell(metric: dict | None) -> str:
+        if metric is None:
+            return (
+                f'<w:tc><w:tcPr><w:tcW w:w="{cell_w}" w:type="dxa"/></w:tcPr>'
+                f'<w:p/></w:tc>'
+            )
+        label = escape(str(metric.get("label") or ""))
+        value = escape(str(metric.get("value") or ""))
+        label_p = (
+            f'<w:p><w:r>'
+            f'<w:rPr><w:color w:val="64748B"/><w:sz w:val="20"/></w:rPr>'
+            f'<w:t xml:space="preserve">{label}</w:t>'
+            f'</w:r></w:p>'
+        )
+        value_p = (
+            f'<w:p><w:r>'
+            f'<w:rPr><w:b/><w:sz w:val="36"/></w:rPr>'
+            f'<w:t xml:space="preserve">{value}</w:t>'
+            f'</w:r></w:p>'
+        )
+        return (
+            f'<w:tc>'
+            f'<w:tcPr>'
+            f'<w:tcW w:w="{cell_w}" w:type="dxa"/>'
+            f'<w:tcBorders>{cell_border}</w:tcBorders>'
+            f'<w:tcMar>'
+            f'<w:top w:w="120" w:type="dxa"/>'
+            f'<w:left w:w="140" w:type="dxa"/>'
+            f'<w:bottom w:w="120" w:type="dxa"/>'
+            f'<w:right w:w="140" w:type="dxa"/>'
+            f'</w:tcMar>'
+            f'</w:tcPr>'
+            f'{label_p}{value_p}'
+            f'</w:tc>'
+        )
+
+    rows_xml = []
+    for i in range(0, len(metrics), 2):
+        left = metrics[i]
+        right = metrics[i + 1] if i + 1 < len(metrics) else None
+        rows_xml.append(f'<w:tr>{_kpi_cell(left)}{_kpi_cell(right)}</w:tr>')
+
+    return (
+        f'<w:tbl>'
+        f'<w:tblPr>'
+        f'<w:tblW w:w="{col_w}" w:type="dxa"/>'
+        f'<w:tblLayout w:type="fixed"/>'
+        f'<w:tblBorders>{tbl_no_border}</w:tblBorders>'
+        f'<w:tblCellSpacing w:w="80" w:type="dxa"/>'
+        f'</w:tblPr>'
+        f'<w:tblGrid>'
+        f'<w:gridCol w:w="{cell_w}"/>'
+        f'<w:gridCol w:w="{cell_w}"/>'
+        f'</w:tblGrid>'
+        + "".join(rows_xml) +
+        f'</w:tbl>'
+    )
 
 
 def _render_chart(parts: list[str], images: list, content: dict, col_w: int) -> None:
