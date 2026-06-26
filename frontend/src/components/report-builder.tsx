@@ -161,6 +161,23 @@ export function ReportBuilder({
     onBlocksChange(blocks.filter((block) => block.id !== id));
   }
 
+  function handleChartTitleEdit(blockId: string, newTitle: string) {
+    onBlocksChange(
+      blocks.map((block) => {
+        if (block.id !== blockId) return block;
+        const chart = block.content.chart as ChartSpec | undefined;
+        return {
+          ...block,
+          title: newTitle,
+          content: {
+            ...block.content,
+            chart: chart ? { ...chart, title: newTitle } : block.content.chart,
+          },
+        };
+      }),
+    );
+  }
+
   function handleChartReady(blockId: string, instance: EChartsHandle) {
     chartInstancesRef.current.set(blockId, instance);
   }
@@ -277,6 +294,7 @@ export function ReportBuilder({
                       onSaveTitleEdit={saveTitleEdit}
                       onCancelTitleEdit={cancelTitleEdit}
                       onRemove={() => removeBlock(block.id)}
+                      onChartTitleEdit={(newTitle) => handleChartTitleEdit(block.id, newTitle)}
                       onChartReady={(instance) => handleChartReady(block.id, instance)}
                     />
                   ))}
@@ -362,6 +380,7 @@ function DraggableBlock({
   onSaveTitleEdit,
   onCancelTitleEdit,
   onRemove,
+  onChartTitleEdit,
   onChartReady,
 }: {
   block: ReportBlock;
@@ -382,12 +401,14 @@ function DraggableBlock({
   onSaveTitleEdit: () => void;
   onCancelTitleEdit: () => void;
   onRemove: () => void;
+  onChartTitleEdit: (newTitle: string) => void;
   onChartReady: (instance: EChartsHandle) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: block.id });
   const style = { transform: CSS.Translate.toString(transform) };
   const showSideSlots = Boolean(activeBlock && activeId !== block.id);
   const combinePreview = getCombinePreview(activeBlock, rowBlocks);
+  const isChart = block.type === "chart";
 
   return (
     <article ref={setNodeRef} style={style} className={`report-block columns-${columnCount} ${isDragging ? "dragging" : ""}`}>
@@ -403,22 +424,24 @@ function DraggableBlock({
         </button>
         <div className="block-title-wrap">
           <span className="block-type">{block.type}</span>
-          {editingTitle ? (
-            <input
-              className="block-title-input"
-              value={draftTitleValue}
-              autoFocus
-              onChange={(e) => onDraftTitleChange(e.target.value)}
-              onBlur={onSaveTitleEdit}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") onSaveTitleEdit();
-                if (e.key === "Escape") onCancelTitleEdit();
-              }}
-            />
-          ) : (
-            <h3 onDoubleClick={onBeginTitleEdit} title="더블클릭해서 제목 수정">
-              {block.title}
-            </h3>
+          {!isChart && (
+            editingTitle ? (
+              <input
+                className="block-title-input"
+                value={draftTitleValue}
+                autoFocus
+                onChange={(e) => onDraftTitleChange(e.target.value)}
+                onBlur={onSaveTitleEdit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") onSaveTitleEdit();
+                  if (e.key === "Escape") onCancelTitleEdit();
+                }}
+              />
+            ) : (
+              <h3 onDoubleClick={onBeginTitleEdit} title="더블클릭해서 제목 수정">
+                {block.title}
+              </h3>
+            )
           )}
         </div>
         <div className="report-block-tools">
@@ -436,6 +459,7 @@ function DraggableBlock({
         onBeginEdit={onBeginEdit}
         onSaveEdit={onSaveEdit}
         onCancelEdit={onCancelEdit}
+        onChartTitleEdit={onChartTitleEdit}
         onChartReady={onChartReady}
       />
     </article>
@@ -479,6 +503,7 @@ function BlockPreview({
   onBeginEdit,
   onSaveEdit,
   onCancelEdit,
+  onChartTitleEdit,
   onChartReady,
 }: {
   block: ReportBlock;
@@ -489,6 +514,7 @@ function BlockPreview({
   onBeginEdit: () => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
+  onChartTitleEdit: (newTitle: string) => void;
   onChartReady: (instance: EChartsHandle) => void;
 }) {
   const content = block.content;
@@ -498,6 +524,7 @@ function BlockPreview({
         chart={content.chart as ChartSpec}
         compact={compact}
         hideReason
+        onTitleEdit={onChartTitleEdit}
         onChartReady={onChartReady}
       />
     );

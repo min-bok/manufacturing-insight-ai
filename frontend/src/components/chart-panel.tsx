@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { useRef, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import type { ChartSpec, ChartType } from "@/types/api";
 
@@ -11,6 +12,7 @@ interface ChartPanelProps {
   chart: ChartSpec;
   onTypeChange?: (type: ChartType) => void;
   onChartReady?: (instance: EChartsHandle) => void;
+  onTitleEdit?: (newTitle: string) => void;
   compact?: boolean;
   hideReason?: boolean;
 }
@@ -31,11 +33,11 @@ const chartLabels: Record<ChartType, string> = {
   kpi: "KPI",
 };
 
-export function ChartPanel({ chart, onTypeChange, onChartReady, compact = false, hideReason = false }: ChartPanelProps) {
+export function ChartPanel({ chart, onTypeChange, onChartReady, onTitleEdit, compact = false, hideReason = false }: ChartPanelProps) {
   if (chart.type === "table") {
     return (
       <div className="chart-panel">
-        <ChartHeader chart={chart} onTypeChange={onTypeChange} />
+        <ChartHeader chart={chart} onTypeChange={onTypeChange} onTitleEdit={onTitleEdit} />
         <DataTable rows={chart.data} compact={compact} />
       </div>
     );
@@ -43,7 +45,7 @@ export function ChartPanel({ chart, onTypeChange, onChartReady, compact = false,
 
   return (
     <div className="chart-panel">
-      <ChartHeader chart={chart} onTypeChange={onTypeChange} />
+      <ChartHeader chart={chart} onTypeChange={onTypeChange} onTitleEdit={onTitleEdit} />
       <ReactECharts
         option={buildOption(chart)}
         style={{ height: compact ? 240 : 320, width: "100%" }}
@@ -56,11 +58,55 @@ export function ChartPanel({ chart, onTypeChange, onChartReady, compact = false,
   );
 }
 
-function ChartHeader({ chart, onTypeChange }: ChartPanelProps) {
+function ChartHeader({ chart, onTypeChange, onTitleEdit }: ChartPanelProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(chart.title);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function startEdit() {
+    if (!onTitleEdit) return;
+    setDraft(chart.title);
+    setEditing(true);
+    setTimeout(() => inputRef.current?.select(), 0);
+  }
+
+  function commit() {
+    setEditing(false);
+    if (draft.trim() && draft.trim() !== chart.title) {
+      onTitleEdit?.(draft.trim());
+    }
+  }
+
+  function cancel() {
+    setEditing(false);
+    setDraft(chart.title);
+  }
+
   return (
     <div className="chart-header">
-      <div>
-        <h3>{chart.title}</h3>
+      <div className="block-title-wrap">
+        {editing ? (
+          <input
+            ref={inputRef}
+            className="block-title-input"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              if (e.key === "Escape") cancel();
+            }}
+            autoFocus
+          />
+        ) : (
+          <h3
+            onDoubleClick={startEdit}
+            style={onTitleEdit ? { cursor: "text" } : undefined}
+            title={onTitleEdit ? "더블클릭으로 제목 편집" : undefined}
+          >
+            {chart.title}
+          </h3>
+        )}
       </div>
       {onTypeChange && (
         <label className="select-label">

@@ -115,7 +115,7 @@ export function Workspace() {
       setSummary(nextSummary);
       setReports(nextReports);
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "초기 데이터를 불러오지 못했습니다.");
+      setError(parseErrorMessage(exc));
     }
   }
 
@@ -130,7 +130,7 @@ export function Workspace() {
       setResult(response);
       setChartOverrides({});
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "질의 처리 중 오류가 발생했습니다.");
+      setError(parseErrorMessage(exc));
     } finally {
       setLoading(false);
     }
@@ -221,13 +221,24 @@ export function Workspace() {
     setSaving(true);
     setError(null);
     try {
-      const saved = reportId ? await updateReport(reportId, reportTitle, blocks) : await createReport(reportTitle, blocks);
+      let saved;
+      if (reportId) {
+        try {
+          saved = await updateReport(reportId, reportTitle, blocks);
+        } catch {
+          // Server may have been restarted and the ID is stale — fall back to create
+          setReportId(null);
+          saved = await createReport(reportTitle, blocks);
+        }
+      } else {
+        saved = await createReport(reportTitle, blocks);
+      }
       setReportId(saved.id);
       setReportTitle(saved.title);
       setBlocks(saved.blocks);
       setReports(await listReports());
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "보고서 저장에 실패했습니다.");
+      setError(parseErrorMessage(exc));
     } finally {
       setSaving(false);
     }
@@ -241,7 +252,7 @@ export function Workspace() {
       setBlocks(report.blocks);
       setSavedReportsOpen(false);
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : "보고서를 불러오지 못했습니다.");
+      setError(parseErrorMessage(exc));
     }
   }
 
@@ -599,4 +610,15 @@ function formatWithUnit(value: unknown, unit: string): string {
   if (typeof value === "number") return `${Number.isInteger(value) ? value : value.toFixed(2)}${unit}`;
   if (value === undefined || value === null || value === "") return "-";
   return `${value}${unit}`;
+}
+
+function parseErrorMessage(raw: unknown): string {
+  const text = raw instanceof Error ? raw.message : String(raw ?? "알 수 없는 오류");
+  try {
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    if (typeof parsed.detail === "string") return parsed.detail;
+  } catch {
+    // Not JSON – use raw message as-is
+  }
+  return text || "알 수 없는 오류가 발생했습니다.";
 }
