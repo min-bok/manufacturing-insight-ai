@@ -148,6 +148,45 @@ npm run dev
 
 브라우저에서 `http://localhost:3000`으로 접속합니다.
 
+
+## 무료 배포 전략
+
+이 프로젝트는 정적 프론트엔드와 FastAPI 백엔드를 분리해서 무료 배포할 수 있도록 구성했습니다.
+
+| 대상 | 배포 위치 | 이유 |
+| --- | --- | --- |
+| Frontend | GitHub Pages | Next.js 정적 export 결과를 무료로 호스팅 |
+| Backend | Hugging Face Spaces Docker | FastAPI 서버를 무료 CPU Space로 실행 |
+
+### 1. Hugging Face Spaces 백엔드 배포
+
+GitHub Actions 워크플로 `Deploy Backend to Hugging Face Spaces`를 사용합니다.
+
+1. Hugging Face에서 Access Token을 생성합니다.
+2. GitHub 저장소의 `Settings > Secrets and variables > Actions > Secrets`에 `HF_TOKEN`을 추가합니다.
+3. GitHub Actions에서 `Deploy Backend to Hugging Face Spaces` 워크플로를 수동 실행합니다.
+4. 기본 Space ID는 `min-bok/manufacturing-insight-ai-api`입니다.
+5. 배포가 완료되면 백엔드 URL은 다음 형식이 됩니다.
+
+```text
+https://min-bok-manufacturing-insight-ai-api.hf.space
+```
+
+Hugging Face 무료 Space는 사용하지 않을 때 sleep 될 수 있습니다. 첫 접속 시 응답이 느릴 수 있지만, 자동 과금 없이 포트폴리오 시연용으로 사용하기 좋습니다.
+
+### 2. GitHub Pages 프론트엔드 배포
+
+GitHub Actions 워크플로 `Deploy Frontend to GitHub Pages`를 사용합니다.
+
+1. GitHub 저장소의 `Settings > Pages`에서 Source를 `GitHub Actions`로 설정합니다.
+2. 필요한 경우 `Settings > Secrets and variables > Actions > Variables`에 `NEXT_PUBLIC_API_BASE_URL`을 추가합니다.
+3. 값은 Hugging Face Spaces 백엔드 URL로 설정합니다.
+
+```text
+NEXT_PUBLIC_API_BASE_URL=https://min-bok-manufacturing-insight-ai-api.hf.space
+```
+
+기본값도 위 URL로 설정되어 있어, Space ID를 그대로 사용한다면 별도 변수 없이 Pages 빌드가 가능합니다.
 ## 프로젝트 구조
 
 ```text

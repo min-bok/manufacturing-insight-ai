@@ -1,0 +1,76 @@
+name: Deploy Backend to Hugging Face Spaces
+
+on:
+  workflow_dispatch:
+    inputs:
+      space_id:
+        description: "Hugging Face Space ID, for example min-bok/manufacturing-insight-ai-api"
+        required: true
+        default: "min-bok/manufacturing-insight-ai-api"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Hugging Face Hub client
+        run: pip install huggingface_hub
+
+      - name: Prepare Space bundle
+        run: |
+          mkdir -p hf-space
+          cp -r backend hf-space/backend
+          cp -r data hf-space/data
+          cp deploy/huggingface/Dockerfile hf-space/Dockerfile
+          cp deploy/huggingface/README.md hf-space/README.md
+          cat > hf-space/.gitignore <<'EOF'
+          .env
+          .env.local
+          .runtime/
+          __pycache__/
+          *.py[cod]
+          *.db
+          *.db-*
+          EOF
+
+      - name: Create or update Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_ID: ${{ inputs.space_id }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi, upload_folder
+
+          token = os.environ.get("HF_TOKEN", "").strip()
+          repo_id = os.environ["HF_SPACE_ID"].strip()
+          if not token:
+              raise SystemExit("Missing HF_TOKEN secret. Add it in GitHub Settings > Secrets and variables > Actions.")
+
+          api = HfApi(token=token)
+          api.create_repo(
+              repo_id=repo_id,
+              repo_type="space",
+              space_sdk="docker",
+              private=False,
+              exist_ok=True,
+          )
+          upload_folder(
+              repo_id=repo_id,
+              repo_type="space",
+              folder_path="hf-space",
+              path_in_repo=".",
+              token=token,
+              commit_message="Deploy Manufacturing Insight AI backend",
+          )
+          PY
