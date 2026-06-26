@@ -56,6 +56,19 @@ export function getDocxUrl(id: number): string {
   return `${API_BASE_URL}/api/reports/${id}/export/docx`;
 }
 
+export async function exportDocxDirect(title: string, blocks: ReportBlock[]): Promise<Blob> {
+  const response = await fetch(`${API_BASE_URL}/api/export/docx`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, blocks }),
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Export failed: ${response.status}`);
+  }
+  return response.blob();
+}
+
 function getUserKey(): string {
   if (typeof window === "undefined") return "server";
   const storageKey = "manufacturing-ai-user-key";

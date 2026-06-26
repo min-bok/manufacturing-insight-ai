@@ -3,10 +3,16 @@
 import ReactECharts from "echarts-for-react";
 import type { ChartSpec, ChartType } from "@/types/api";
 
+export interface EChartsHandle {
+  getDataURL(opts: { type: string; pixelRatio: number; backgroundColor: string }): string;
+}
+
 interface ChartPanelProps {
   chart: ChartSpec;
   onTypeChange?: (type: ChartType) => void;
+  onChartReady?: (instance: EChartsHandle) => void;
   compact?: boolean;
+  hideReason?: boolean;
 }
 
 interface DataTableProps {
@@ -25,7 +31,7 @@ const chartLabels: Record<ChartType, string> = {
   kpi: "KPI",
 };
 
-export function ChartPanel({ chart, onTypeChange, compact = false }: ChartPanelProps) {
+export function ChartPanel({ chart, onTypeChange, onChartReady, compact = false, hideReason = false }: ChartPanelProps) {
   if (chart.type === "table") {
     return (
       <div className="chart-panel">
@@ -38,8 +44,14 @@ export function ChartPanel({ chart, onTypeChange, compact = false }: ChartPanelP
   return (
     <div className="chart-panel">
       <ChartHeader chart={chart} onTypeChange={onTypeChange} />
-      <ReactECharts option={buildOption(chart)} style={{ height: compact ? 240 : 320, width: "100%" }} notMerge lazyUpdate />
-      {!compact && <p className="chart-reason">{chart.reason}</p>}
+      <ReactECharts
+        option={buildOption(chart)}
+        style={{ height: compact ? 240 : 320, width: "100%" }}
+        notMerge
+        lazyUpdate
+        onChartReady={onChartReady ? (inst) => onChartReady(inst as unknown as EChartsHandle) : undefined}
+      />
+      {!compact && !hideReason && <p className="chart-reason">{chart.reason}</p>}
     </div>
   );
 }

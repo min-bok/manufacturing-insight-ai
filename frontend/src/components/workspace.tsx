@@ -15,7 +15,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { askQuestion, createReport, getDocxUrl, getReport, getSummary, listReports, updateReport } from "@/lib/api";
+import { askQuestion, createReport, getReport, getSummary, listReports, updateReport } from "@/lib/api";
 import type { BlockType, ChartSpec, ChartType, DatasetSummary, MetricCard, QueryResponse, ReportBlock, ReportSummary } from "@/types/api";
 import { ChartPanel, DataTable } from "./chart-panel";
 import { ReportBuilder } from "./report-builder";
@@ -252,11 +252,6 @@ export function Workspace() {
     setBlocks([]);
   }
 
-  function downloadDocx() {
-    if (!reportId) return;
-    window.location.href = getDocxUrl(reportId);
-  }
-
   return (
     <main className={`app-shell ${reportExpanded ? "report-focus-mode" : ""}`}>
       <section className="topbar compact-topbar">
@@ -416,7 +411,6 @@ export function Workspace() {
             onTitleChange={setReportTitle}
             onBlocksChange={setBlocks}
             onSave={() => void saveReport()}
-            onDownload={downloadDocx}
             onToggleExpanded={() => setReportExpanded((value) => !value)}
           />
         </aside>

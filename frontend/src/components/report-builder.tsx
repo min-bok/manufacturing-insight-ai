@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import {
   DndContext,
@@ -16,7 +16,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Download, GripVertical, Maximize2, Minimize2, Save, Trash2 } from "lucide-react";
 import type { BlockType, ChartSpec, ReportBlock } from "@/types/api";
-import { ChartPanel, DataTable } from "./chart-panel";
+import { exportDocxDirect } from "@/lib/api";
+import { ChartPanel, DataTable, type EChartsHandle } from "./chart-panel";
 
 interface ReportBuilderProps {
   title: string;
@@ -27,7 +28,6 @@ interface ReportBuilderProps {
   onTitleChange: (title: string) => void;
   onBlocksChange: (blocks: ReportBlock[]) => void;
   onSave: () => void;
-  onDownload: () => void;
   onToggleExpanded: () => void;
 }
 
@@ -60,21 +60,33 @@ export function ReportBuilder({
   onTitleChange,
   onBlocksChange,
   onSave,
-  onDownload,
   onToggleExpanded,
 }: ReportBuilderProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [layoutMessage, setLayoutMessage] = useState<string | null>(null);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [draftText, setDraftText] = useState("");
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
+  const [draftTitleValue, setDraftTitleValue] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const chartInstancesRef = useRef<Map<string, EChartsHandle>>(new Map());
   const rows = useMemo(() => buildRows(blocks), [blocks]);
   const activeBlock = useMemo(() => blocks.find((block) => block.id === activeId) || null, [blocks, activeId]);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  // Remove stale chart instance refs when blocks are removed
+  useEffect(() => {
+    const currentIds = new Set(blocks.map((b) => b.id));
+    for (const id of chartInstancesRef.current.keys()) {
+      if (!currentIds.has(id)) chartInstancesRef.current.delete(id);
+    }
+  }, [blocks]);
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(String(event.active.id));
     setLayoutMessage(null);
     cancelTextEdit();
+    cancelTitleEdit();
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -104,6 +116,7 @@ export function ReportBuilder({
   function beginTextEdit(block: ReportBlock) {
     const editable = getEditableText(block);
     if (!editable) return;
+    cancelTitleEdit();
     setEditingBlockId(block.id);
     setDraftText(editable.value);
   }
@@ -120,9 +133,67 @@ export function ReportBuilder({
     setDraftText("");
   }
 
+  function beginTitleEdit(block: ReportBlock) {
+    cancelTextEdit();
+    setEditingTitleId(block.id);
+    setDraftTitleValue(block.title);
+  }
+
+  function saveTitleEdit() {
+    if (!editingTitleId) return;
+    onBlocksChange(
+      blocks.map((block) =>
+        block.id === editingTitleId ? { ...block, title: draftTitleValue.trim() || block.title } : block,
+      ),
+    );
+    setEditingTitleId(null);
+    setDraftTitleValue("");
+  }
+
+  function cancelTitleEdit() {
+    setEditingTitleId(null);
+    setDraftTitleValue("");
+  }
+
   function removeBlock(id: string) {
     if (editingBlockId === id) cancelTextEdit();
+    if (editingTitleId === id) cancelTitleEdit();
     onBlocksChange(blocks.filter((block) => block.id !== id));
+  }
+
+  function handleChartReady(blockId: string, instance: EChartsHandle) {
+    chartInstancesRef.current.set(blockId, instance);
+  }
+
+  async function handleDownload() {
+    setDownloading(true);
+    try {
+      const blocksWithImages = blocks.map((block) => {
+        if (block.type !== "chart") return block;
+        const instance = chartInstancesRef.current.get(block.id);
+        if (!instance) return block;
+        try {
+          const imageDataUrl = instance.getDataURL({ type: "png", pixelRatio: 2, backgroundColor: "#ffffff" });
+          return { ...block, content: { ...block.content, imageDataUrl } };
+        } catch {
+          return block;
+        }
+      });
+
+      const blob = await exportDocxDirect(title, blocksWithImages);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      const safeTitle = title.replace(/[^\w가-힣\-]/g, "_").slice(0, 40);
+      anchor.href = url;
+      anchor.download = `${dateStr}_${safeTitle}.docx`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("DOCX export failed:", err);
+    } finally {
+      setDownloading(false);
+    }
   }
 
   function updateRowRatio(rowId: string, leftWidth: number) {
@@ -140,6 +211,9 @@ export function ReportBuilder({
     );
   }
 
+  // savedReportId kept for future use (e.g. showing saved indicator)
+  void savedReportId;
+
   return (
     <section className="report-builder">
       <div className="panel-title-row report-builder-title-row">
@@ -154,7 +228,12 @@ export function ReportBuilder({
           <button className="icon-button" onClick={onSave} disabled={saving} title="보고서 저장">
             <Save size={18} />
           </button>
-          <button className="icon-button" onClick={onDownload} disabled={!savedReportId} title="DOCX 다운로드">
+          <button
+            className="icon-button"
+            onClick={() => void handleDownload()}
+            disabled={downloading || blocks.length === 0}
+            title="DOCX 다운로드"
+          >
             <Download size={18} />
           </button>
         </div>
@@ -187,11 +266,18 @@ export function ReportBuilder({
                       activeBlock={activeBlock}
                       editing={editingBlockId === block.id}
                       draftText={draftText}
+                      editingTitle={editingTitleId === block.id}
+                      draftTitleValue={draftTitleValue}
                       onDraftTextChange={setDraftText}
+                      onDraftTitleChange={setDraftTitleValue}
                       onBeginEdit={() => beginTextEdit(block)}
                       onSaveEdit={saveTextEdit}
                       onCancelEdit={cancelTextEdit}
+                      onBeginTitleEdit={() => beginTitleEdit(block)}
+                      onSaveTitleEdit={saveTitleEdit}
+                      onCancelTitleEdit={cancelTitleEdit}
                       onRemove={() => removeBlock(block.id)}
+                      onChartReady={(instance) => handleChartReady(block.id, instance)}
                     />
                   ))}
                 </ReportRowView>
@@ -265,11 +351,18 @@ function DraggableBlock({
   activeBlock,
   editing,
   draftText,
+  editingTitle,
+  draftTitleValue,
   onDraftTextChange,
+  onDraftTitleChange,
   onBeginEdit,
   onSaveEdit,
   onCancelEdit,
+  onBeginTitleEdit,
+  onSaveTitleEdit,
+  onCancelTitleEdit,
   onRemove,
+  onChartReady,
 }: {
   block: ReportBlock;
   columnCount: number;
@@ -278,11 +371,18 @@ function DraggableBlock({
   activeBlock: ReportBlock | null;
   editing: boolean;
   draftText: string;
+  editingTitle: boolean;
+  draftTitleValue: string;
   onDraftTextChange: (value: string) => void;
+  onDraftTitleChange: (value: string) => void;
   onBeginEdit: () => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
+  onBeginTitleEdit: () => void;
+  onSaveTitleEdit: () => void;
+  onCancelTitleEdit: () => void;
   onRemove: () => void;
+  onChartReady: (instance: EChartsHandle) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: block.id });
   const style = { transform: CSS.Translate.toString(transform) };
@@ -301,9 +401,25 @@ function DraggableBlock({
         <button className="drag-handle" {...attributes} {...listeners} title="블록 이동">
           <GripVertical size={18} />
         </button>
-        <div>
+        <div className="block-title-wrap">
           <span className="block-type">{block.type}</span>
-          <h3>{block.title}</h3>
+          {editingTitle ? (
+            <input
+              className="block-title-input"
+              value={draftTitleValue}
+              autoFocus
+              onChange={(e) => onDraftTitleChange(e.target.value)}
+              onBlur={onSaveTitleEdit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") onSaveTitleEdit();
+                if (e.key === "Escape") onCancelTitleEdit();
+              }}
+            />
+          ) : (
+            <h3 onDoubleClick={onBeginTitleEdit} title="더블클릭해서 제목 수정">
+              {block.title}
+            </h3>
+          )}
         </div>
         <div className="report-block-tools">
           <button className="ghost-icon-button" onClick={onRemove} title="블록 삭제">
@@ -320,6 +436,7 @@ function DraggableBlock({
         onBeginEdit={onBeginEdit}
         onSaveEdit={onSaveEdit}
         onCancelEdit={onCancelEdit}
+        onChartReady={onChartReady}
       />
     </article>
   );
@@ -362,6 +479,7 @@ function BlockPreview({
   onBeginEdit,
   onSaveEdit,
   onCancelEdit,
+  onChartReady,
 }: {
   block: ReportBlock;
   compact: boolean;
@@ -371,10 +489,18 @@ function BlockPreview({
   onBeginEdit: () => void;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
+  onChartReady: (instance: EChartsHandle) => void;
 }) {
   const content = block.content;
   if (block.type === "chart" && content.chart && typeof content.chart === "object") {
-    return <ChartPanel chart={content.chart as ChartSpec} compact={compact} />;
+    return (
+      <ChartPanel
+        chart={content.chart as ChartSpec}
+        compact={compact}
+        hideReason
+        onChartReady={onChartReady}
+      />
+    );
   }
   if (block.type === "table") {
     const rows = (content.rows || content.table || []) as Record<string, unknown>[];

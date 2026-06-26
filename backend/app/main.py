@@ -1,5 +1,8 @@
 ﻿from __future__ import annotations
 
+import re
+from datetime import datetime, timezone
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
@@ -10,6 +13,12 @@ from app.services.data_service import analyze_question, get_dataset_summary
 from app.services.docx_export import build_docx
 from app.services.llm_service import maybe_enhance_with_llm
 from app.services.report_store import ReportStore
+
+
+def _docx_filename(title: str) -> str:
+    date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
+    safe = re.sub(r"[^\w가-힣\-]", "_", title)[:40].strip("_") or "report"
+    return f"{date_str}_{safe}.docx"
 
 settings = get_settings()
 app = FastAPI(title="Manufacturing Insight AI", version="0.1.0")
@@ -83,6 +92,16 @@ def delete_report(report_id: int) -> dict[str, bool]:
     return {"ok": True}
 
 
+@app.post("/api/export/docx")
+def export_docx_direct(payload: ReportCreate) -> Response:
+    data = build_docx(payload)
+    return Response(
+        content=data,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f'attachment; filename="{_docx_filename(payload.title)}"'},
+    )
+
+
 @app.get("/api/reports/{report_id}/export/docx")
 def export_docx(report_id: int) -> Response:
     try:
@@ -90,10 +109,9 @@ def export_docx(report_id: int) -> Response:
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     data = build_docx(report)
-    safe_name = f"manufacturing-insight-ai-report-{report_id}.docx"
     return Response(
         content=data,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        headers={"Content-Disposition": f'attachment; filename="{safe_name}"'},
+        headers={"Content-Disposition": f'attachment; filename="{_docx_filename(report.title)}"'},
     )
 
