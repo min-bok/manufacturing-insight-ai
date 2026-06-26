@@ -1,12 +1,14 @@
-name: Deploy Backend to Hugging Face Spaces
+name: Deploy to Hugging Face Spaces
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "data/**"
+      - "deploy/huggingface/**"
+      - ".github/workflows/deploy-huggingface.yml"
   workflow_dispatch:
-    inputs:
-      space_id:
-        description: "Hugging Face Space ID, for example min-bok/manufacturing-insight-ai-api"
-        required: true
-        default: "min-bok/manufacturing-insight-ai-api"
 
 permissions:
   contents: read
@@ -14,6 +16,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,38 +27,30 @@ jobs:
           python-version: "3.12"
 
       - name: Install Hugging Face Hub client
-        run: pip install huggingface_hub
+        run: pip install "huggingface_hub>=0.23"
 
       - name: Prepare Space bundle
         run: |
           mkdir -p hf-space
-          cp -r backend hf-space/backend
-          cp -r data hf-space/data
-          cp deploy/huggingface/Dockerfile hf-space/Dockerfile
-          cp deploy/huggingface/README.md hf-space/README.md
-          cat > hf-space/.gitignore <<'EOF'
-          .env
-          .env.local
-          .runtime/
-          __pycache__/
-          *.py[cod]
-          *.db
-          *.db-*
-          EOF
+          cp -r backend  hf-space/backend
+          cp -r data     hf-space/data
+          cp deploy/huggingface/Dockerfile  hf-space/Dockerfile
+          cp deploy/huggingface/README.md   hf-space/README.md
 
-      - name: Create or update Space
+      - name: Deploy to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_SPACE_ID: ${{ inputs.space_id }}
         run: |
           python - <<'PY'
           import os
           from huggingface_hub import HfApi, upload_folder
 
-          token = os.environ.get("HF_TOKEN", "").strip()
-          repo_id = os.environ["HF_SPACE_ID"].strip()
+          token = os.environ["HF_TOKEN"].strip()
           if not token:
-              raise SystemExit("Missing HF_TOKEN secret. Add it in GitHub Settings > Secrets and variables > Actions.")
+              raise SystemExit("HF_TOKEN secret is empty. "
+                               "Add it in GitHub Settings > Secrets and variables > Actions.")
+
+          repo_id = "min-bok/manufacturing-insight-ai"
 
           api = HfApi(token=token)
           api.create_repo(
@@ -71,6 +66,8 @@ jobs:
               folder_path="hf-space",
               path_in_repo=".",
               token=token,
-              commit_message="Deploy Manufacturing Insight AI backend",
+              commit_message="chore: deploy Manufacturing Insight AI",
+              ignore_patterns=["**/__pycache__/**", "**/*.pyc", "**/*.db"],
           )
+          print(f"Deployed → https://huggingface.co/spaces/{repo_id}")
           PY

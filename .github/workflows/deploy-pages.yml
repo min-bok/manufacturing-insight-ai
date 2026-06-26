@@ -40,7 +40,7 @@ jobs:
       - name: Build static site
         env:
           GITHUB_PAGES: "true"
-          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL || 'https://min-bok-manufacturing-insight-ai-api.hf.space' }}
+          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL || 'https://min-bok-manufacturing-insight-ai.hf.space' }}
         run: npm --prefix frontend run build
 
       - name: Disable Jekyll

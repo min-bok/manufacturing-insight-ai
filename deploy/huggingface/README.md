@@ -1,5 +1,5 @@
 ---
-title: Manufacturing Insight AI API
+title: Manufacturing Insight AI
 emoji: 🏭
 colorFrom: blue
 colorTo: green
