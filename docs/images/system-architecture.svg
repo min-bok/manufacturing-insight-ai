@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="Manufacturing Insight AI system architecture">
+  <rect width="1280" height="720" fill="#f8fafc"/>
+  <text x="70" y="84" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="900" fill="#0f172a">System Architecture</text>
+  <text x="70" y="124" font-family="Inter, Arial, sans-serif" font-size="18" fill="#475569">Deterministic analytics first, optional Gemini refinement second, with free-tier guardrails.</text>
+
+  <rect x="86" y="204" width="270" height="270" rx="20" fill="#ffffff" stroke="#cfe4ee"/>
+  <text x="124" y="256" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="900" fill="#0f172a">Next.js Frontend</text>
+  <text x="124" y="300" font-family="Inter, Arial, sans-serif" font-size="17" fill="#475569">Natural query UI</text>
+  <text x="124" y="334" font-family="Inter, Arial, sans-serif" font-size="17" fill="#475569">ECharts visualization</text>
+  <text x="124" y="368" font-family="Inter, Arial, sans-serif" font-size="17" fill="#475569">Drag &amp; Drop report builder</text>
+  <text x="124" y="402" font-family="Inter, Arial, sans-serif" font-size="17" fill="#475569">LocalStorage autosave</text>
+
+  <rect x="505" y="204" width="270" height="270" rx="20" fill="#ffffff" stroke="#cfe4ee"/>
+  <text x="543" y="256" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="900" fill="#0f172a">FastAPI Backend</text>
+  <text x="543" y="300" font-family="Inter, Arial, sans-serif" font-size="17" fill="#475569">CSV KPI aggregation</text>
+  <text x="543" y="334" font-family="Inter, Arial, sans-serif" font-size="17" fill="#475569">Intent-based analysis</text>
+  <text x="543" y="368" font-family="Inter, Arial, sans-serif" font-size="17" fill="#475569">Evidence generation</text>
+  <text x="543" y="402" font-family="Inter, Arial, sans-serif" font-size="17" fill="#475569">DOCX export API</text>
+
+  <rect x="924" y="168" width="270" height="130" rx="20" fill="#ffffff" stroke="#cfe4ee"/>
+  <text x="962" y="220" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="900" fill="#0f172a">SQLite</text>
+  <text x="962" y="258" font-family="Inter, Arial, sans-serif" font-size="17" fill="#475569">Saved reports</text>
+
+  <rect x="924" y="348" width="270" height="130" rx="20" fill="#ffffff" stroke="#fed7aa"/>
+  <text x="962" y="400" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="900" fill="#9a3412">Gemini Optional</text>
+  <text x="962" y="438" font-family="Inter, Arial, sans-serif" font-size="17" fill="#475569">Free-tier protection</text>
+
+  <path d="M374 338 L486 338" stroke="#17799e" stroke-width="6" stroke-linecap="round"/>
+  <path d="M466 320 L488 338 L466 356" stroke="#17799e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M794 286 L904 238" stroke="#17799e" stroke-width="5" stroke-linecap="round"/>
+  <path d="M794 390 L904 414" stroke="#f59e0b" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 10"/>
+
+  <rect x="198" y="540" width="884" height="74" rx="16" fill="#eef7f2" stroke="#b7ddc8"/>
+  <text x="238" y="586" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="900" fill="#166534">Core idea: reliable data analysis remains available even when LLM usage is unavailable.</text>
+</svg>

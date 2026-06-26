@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="Manufacturing Insight AI workspace preview">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#0f172a" flood-opacity="0.14"/>
+    </filter>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fbff"/>
+      <stop offset="1" stop-color="#eef7f2"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#hero)"/>
+  <rect x="56" y="48" width="1168" height="624" rx="28" fill="#ffffff" filter="url(#shadow)"/>
+  <text x="92" y="106" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="800" fill="#0f6b92">MANUFACTURING AI PORTFOLIO</text>
+  <text x="92" y="152" font-family="Inter, Arial, sans-serif" font-size="42" font-weight="900" fill="#0f172a">Manufacturing Insight AI</text>
+  <text x="92" y="190" font-family="Inter, Arial, sans-serif" font-size="20" fill="#475569">Ask manufacturing data, visualize KPI evidence, and build editable reports.</text>
+
+  <rect x="92" y="238" width="514" height="354" rx="16" fill="#f8fafc" stroke="#dbe7f2"/>
+  <text x="124" y="282" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="800" fill="#0f6b92">ASK DATA</text>
+  <text x="124" y="316" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="900" fill="#0f172a">Natural Language Query</text>
+  <rect x="124" y="342" width="350" height="78" rx="12" fill="#ffffff" stroke="#cfe4ee"/>
+  <text x="146" y="389" font-family="Inter, Arial, sans-serif" font-size="19" fill="#0f172a">Which equipment has low OEE?</text>
+  <rect x="488" y="342" width="86" height="78" rx="12" fill="#17799e"/>
+  <text x="509" y="388" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="800" fill="#ffffff">Analyze</text>
+  <rect x="124" y="450" width="420" height="96" rx="12" fill="#ffffff" stroke="#dbe7f2"/>
+  <text x="146" y="482" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" fill="#0f6b92">OEE ANALYSIS</text>
+  <text x="146" y="514" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="900" fill="#0f172a">Low OEE Equipment</text>
+  <text x="146" y="542" font-family="Inter, Arial, sans-serif" font-size="16" fill="#475569">Evidence, KPI cards, charts, and follow-up prompts</text>
+
+  <rect x="654" y="238" width="478" height="354" rx="16" fill="#f8fafc" stroke="#dbe7f2"/>
+  <text x="686" y="282" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="800" fill="#0f6b92">REPORT BUILDER</text>
+  <text x="686" y="316" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="900" fill="#0f172a">Editable Report Canvas</text>
+  <rect x="686" y="344" width="414" height="48" rx="10" fill="#ffffff" stroke="#cfe4ee"/>
+  <text x="704" y="375" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="800" fill="#0f172a">Manufacturing Insight AI Report</text>
+  <rect x="686" y="420" width="194" height="118" rx="12" fill="#ffffff" stroke="#9fd3e6"/>
+  <rect x="900" y="420" width="200" height="118" rx="12" fill="#ffffff" stroke="#9fd3e6"/>
+  <text x="708" y="454" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#64748b">KPI</text>
+  <text x="708" y="486" font-family="Inter, Arial, sans-serif" font-size="21" font-weight="900" fill="#0f172a">Avg OEE 76.55%</text>
+  <text x="922" y="454" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#64748b">CHART</text>
+  <rect x="928" y="488" width="32" height="24" rx="5" fill="#5675cf"/>
+  <rect x="970" y="466" width="32" height="46" rx="5" fill="#8ac873"/>
+  <rect x="1012" y="438" width="32" height="74" rx="5" fill="#f6c85f"/>
+  <rect x="1054" y="456" width="32" height="56" rx="5" fill="#f56c6c"/>
+  <path d="M882 424 L898 424 L898 538 L882 538" stroke="#17799e" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <text x="772" y="568" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" fill="#0f6b92">Drag &amp; drop layout · Ratio resize · DOCX export</text>
+</svg>
