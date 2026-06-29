@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - "frontend/**"
+      - "deploy/**"
+      - "backend/.env.example"
+      - ".github/workflows/deploy-huggingface.yml"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
