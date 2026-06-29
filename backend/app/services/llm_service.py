@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 import json
+import socket
 import sqlite3
 import urllib.error
 import urllib.request
@@ -28,7 +29,7 @@ def maybe_enhance_with_llm(result: QueryResponse, user_key: str | None) -> Query
         return result
 
     try:
-        generated = _call_gemini(result)
+        generated, model_used, fallback_count = _call_gemini(result)
     except QuotaExhaustedError:
         result.llm_status = "quota_exhausted"
         result.llm_message = FREE_USAGE_MESSAGE
@@ -45,11 +46,18 @@ def maybe_enhance_with_llm(result: QueryResponse, user_key: str | None) -> Query
     if isinstance(suggestions, list) and suggestions:
         result.suggestions = [str(item).strip() for item in suggestions if str(item).strip()][:5]
     result.llm_status = "used"
-    result.llm_message = "Gemini가 분석 설명과 다음 질문을 다듬었습니다."
+    if fallback_count:
+        result.llm_message = f"Gemini가 {model_used}로 자동 전환해 분석 설명과 다음 질문을 다듬었습니다."
+    else:
+        result.llm_message = f"Gemini가 {model_used}로 분석 설명과 다음 질문을 다듬었습니다."
     return result
 
 
 class QuotaExhaustedError(RuntimeError):
+    pass
+
+
+class RetryableGeminiError(RuntimeError):
     pass
 
 
@@ -115,11 +123,35 @@ def _today() -> str:
     return datetime.now(timezone.utc).date().isoformat()
 
 
-def _call_gemini(result: QueryResponse) -> dict[str, Any]:
+def _call_gemini(result: QueryResponse) -> tuple[dict[str, Any], str, int]:
+    settings = get_settings()
+    models = _gemini_models(settings.gemini_model, settings.gemini_fallback_models)
+    errors: list[str] = []
+    for index, model in enumerate(models):
+        try:
+            return _request_gemini(result, model), model, index
+        except QuotaExhaustedError:
+            raise
+        except RetryableGeminiError as exc:
+            errors.append(f"{model}: {exc}")
+
+    detail = " / ".join(errors) or "사용 가능한 Gemini 모델이 없습니다."
+    raise RuntimeError(detail)
+
+
+def _gemini_models(primary: str, fallbacks: list[str]) -> list[str]:
+    models: list[str] = []
+    for model in [primary, *fallbacks]:
+        if model and model not in models:
+            models.append(model)
+    return models
+
+
+def _request_gemini(result: QueryResponse, model: str) -> dict[str, Any]:
     settings = get_settings()
     url = (
         f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{settings.gemini_model}:generateContent?key={settings.gemini_api_key}"
+        f"{model}:generateContent?key={settings.gemini_api_key}"
     )
     prompt = _build_prompt(result)
     payload = {
@@ -130,7 +162,7 @@ def _call_gemini(result: QueryResponse) -> dict[str, Any]:
             "responseMimeType": "application/json",
         },
     }
-    if settings.gemini_model.startswith("gemini-3") and settings.gemini_thinking_level:
+    if model.startswith("gemini-3") and settings.gemini_thinking_level:
         payload["generationConfig"]["thinkingConfig"] = {
             "thinkingLevel": settings.gemini_thinking_level,
         }
@@ -149,7 +181,16 @@ def _call_gemini(result: QueryResponse) -> dict[str, Any]:
         error_body = exc.read().decode("utf-8", errors="ignore")
         if "RESOURCE_EXHAUSTED" in error_body or "quota" in error_body.lower():
             raise QuotaExhaustedError() from exc
+        if exc.code in {404, 408, 500, 502, 503, 504}:
+            raise RetryableGeminiError(f"Gemini HTTP {exc.code}") from exc
         raise RuntimeError(f"Gemini HTTP {exc.code}") from exc
+    except (TimeoutError, socket.timeout) as exc:
+        raise RetryableGeminiError("Gemini 응답 시간이 초과되었습니다.") from exc
+    except urllib.error.URLError as exc:
+        reason = str(getattr(exc, "reason", exc))
+        if "timed out" in reason.lower() or "temporarily unavailable" in reason.lower():
+            raise RetryableGeminiError(f"Gemini 연결이 일시적으로 불안정합니다: {reason}") from exc
+        raise
 
     text = _extract_text(body)
     if not text:

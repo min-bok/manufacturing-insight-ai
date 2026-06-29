@@ -33,12 +33,21 @@ def _env_value(key: str, default: str = "") -> str:
     return value
 
 
+def _env_list(key: str, default: str = "") -> list[str]:
+    value = _env_value(key, default)
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 class Settings:
     app_env: str = os.getenv("APP_ENV", "development")
     dataset_path: Path = _resolve_project_path(os.getenv("DATASET_PATH", "data/manufacturing_data.csv"))
     database_path: Path = _resolve_project_path(os.getenv("DATABASE_PATH", ".runtime/app.db"))
     gemini_api_key: str = _env_value("GEMINI_API_KEY")
     gemini_model: str = _env_value("GEMINI_MODEL", "gemini-3.5-flash")
+    gemini_fallback_models: list[str] = _env_list(
+        "GEMINI_FALLBACK_MODELS",
+        "gemini-3.1-flash-lite,gemini-2.5-flash-lite",
+    )
     gemini_thinking_level: str = _env_value("GEMINI_THINKING_LEVEL", "low")
     gemini_timeout_seconds: int = int(os.getenv("GEMINI_TIMEOUT_SECONDS", "25"))
     llm_daily_user_limit: int = int(os.getenv("LLM_DAILY_USER_LIMIT", "5"))

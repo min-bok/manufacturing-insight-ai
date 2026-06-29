@@ -165,7 +165,7 @@ GitHub Actions 워크플로 `Deploy Backend to Hugging Face Spaces`를 사용합
 1. Hugging Face에서 Write 권한 Access Token을 생성합니다.
 2. GitHub 저장소의 `Settings > Secrets and variables > Actions > Secrets`에 `HF_TOKEN`을 추가합니다.
 3. Gemini를 사용할 경우 같은 Secrets 위치에 `GEMINI_API_KEY`도 추가합니다. 이 값은 코드에 포함하지 않고 Hugging Face Space Secret으로만 동기화됩니다.
-4. 필요한 경우 `Settings > Secrets and variables > Actions > Variables`에 `GEMINI_MODEL`, `LLM_DAILY_USER_LIMIT`, `LLM_DAILY_GLOBAL_LIMIT`, `LLM_MAX_OUTPUT_TOKENS`, `CORS_ORIGINS`를 추가합니다.
+4. 필요한 경우 `Settings > Secrets and variables > Actions > Variables`에 `GEMINI_MODEL`, `GEMINI_FALLBACK_MODELS`, `GEMINI_THINKING_LEVEL`, `GEMINI_TIMEOUT_SECONDS`, `LLM_DAILY_USER_LIMIT`, `LLM_DAILY_GLOBAL_LIMIT`, `LLM_MAX_OUTPUT_TOKENS`, `CORS_ORIGINS`를 추가합니다.
 5. `main` 브랜치에 push하면 `Deploy to Hugging Face Spaces` 워크플로가 자동 실행됩니다. 수동 실행도 가능합니다.
 6. Space ID는 `min-bok/manufacturing-insight-ai`입니다.
 7. 배포가 완료되면 백엔드 URL은 다음 형식이 됩니다.

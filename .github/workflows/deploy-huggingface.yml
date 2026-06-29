@@ -36,6 +36,7 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3.5-flash' }}
+          GEMINI_FALLBACK_MODELS: ${{ vars.GEMINI_FALLBACK_MODELS || 'gemini-3.1-flash-lite,gemini-2.5-flash-lite' }}
           GEMINI_THINKING_LEVEL: ${{ vars.GEMINI_THINKING_LEVEL || 'low' }}
           GEMINI_TIMEOUT_SECONDS: ${{ vars.GEMINI_TIMEOUT_SECONDS || '25' }}
           LLM_DAILY_USER_LIMIT: ${{ vars.LLM_DAILY_USER_LIMIT || '5' }}
@@ -72,6 +73,10 @@ jobs:
 
           variables = {
               "GEMINI_MODEL": os.environ.get("GEMINI_MODEL", "gemini-3.5-flash").strip(),
+              "GEMINI_FALLBACK_MODELS": os.environ.get(
+                  "GEMINI_FALLBACK_MODELS",
+                  "gemini-3.1-flash-lite,gemini-2.5-flash-lite",
+              ).strip(),
               "GEMINI_THINKING_LEVEL": os.environ.get("GEMINI_THINKING_LEVEL", "low").strip(),
               "GEMINI_TIMEOUT_SECONDS": os.environ.get("GEMINI_TIMEOUT_SECONDS", "25").strip(),
               "LLM_DAILY_USER_LIMIT": os.environ.get("LLM_DAILY_USER_LIMIT", "5").strip(),
