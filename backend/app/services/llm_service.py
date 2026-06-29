@@ -130,6 +130,10 @@ def _call_gemini(result: QueryResponse) -> dict[str, Any]:
             "responseMimeType": "application/json",
         },
     }
+    if settings.gemini_model.startswith("gemini-3") and settings.gemini_thinking_level:
+        payload["generationConfig"]["thinkingConfig"] = {
+            "thinkingLevel": settings.gemini_thinking_level,
+        }
     request = urllib.request.Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
