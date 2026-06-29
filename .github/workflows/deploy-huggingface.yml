@@ -3,13 +3,7 @@ name: Deploy to Hugging Face Spaces
 on:
   push:
     branches: [main]
-    paths:
-      - "backend/**"
-      - "data/**"
-      - "deploy/huggingface/**"
-      - ".github/workflows/deploy-huggingface.yml"
   workflow_dispatch:
-
 permissions:
   contents: read
 
@@ -32,26 +26,32 @@ jobs:
       - name: Prepare Space bundle
         run: |
           mkdir -p hf-space
-          cp -r backend  hf-space/backend
-          cp -r data     hf-space/data
-          cp deploy/huggingface/Dockerfile  hf-space/Dockerfile
-          cp deploy/huggingface/README.md   hf-space/README.md
+          cp -r backend hf-space/backend
+          cp -r data hf-space/data
+          cp deploy/huggingface/Dockerfile hf-space/Dockerfile
+          cp deploy/huggingface/README.md hf-space/README.md
 
       - name: Deploy to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3.5-flash' }}
+          LLM_DAILY_USER_LIMIT: ${{ vars.LLM_DAILY_USER_LIMIT || '5' }}
+          LLM_DAILY_GLOBAL_LIMIT: ${{ vars.LLM_DAILY_GLOBAL_LIMIT || '100' }}
+          LLM_MAX_OUTPUT_TOKENS: ${{ vars.LLM_MAX_OUTPUT_TOKENS || '900' }}
+          CORS_ORIGINS: ${{ vars.CORS_ORIGINS || 'https://min-bok.github.io,http://localhost:3000,http://127.0.0.1:3000' }}
         run: |
           python - <<'PY'
           import os
           from huggingface_hub import HfApi, upload_folder
 
-          token = os.environ["HF_TOKEN"].strip()
+          token = os.environ.get("HF_TOKEN", "").strip()
           if not token:
-              raise SystemExit("HF_TOKEN secret is empty. "
-                               "Add it in GitHub Settings > Secrets and variables > Actions.")
+              raise SystemExit(
+                  "HF_TOKEN secret is empty. Add it in GitHub Settings > Secrets and variables > Actions."
+              )
 
           repo_id = "min-bok/manufacturing-insight-ai"
-
           api = HfApi(token=token)
           api.create_repo(
               repo_id=repo_id,
@@ -60,6 +60,28 @@ jobs:
               private=False,
               exist_ok=True,
           )
+
+          gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+          if gemini_key:
+              api.add_space_secret(repo_id=repo_id, key="GEMINI_API_KEY", value=gemini_key, token=token)
+              print("Synced GEMINI_API_KEY as a Hugging Face Space secret.")
+          else:
+              print("GEMINI_API_KEY GitHub secret is not set. Space will run in rule-based mode.")
+
+          variables = {
+              "GEMINI_MODEL": os.environ.get("GEMINI_MODEL", "gemini-3.5-flash").strip(),
+              "LLM_DAILY_USER_LIMIT": os.environ.get("LLM_DAILY_USER_LIMIT", "5").strip(),
+              "LLM_DAILY_GLOBAL_LIMIT": os.environ.get("LLM_DAILY_GLOBAL_LIMIT", "100").strip(),
+              "LLM_MAX_OUTPUT_TOKENS": os.environ.get("LLM_MAX_OUTPUT_TOKENS", "900").strip(),
+              "CORS_ORIGINS": os.environ.get(
+                  "CORS_ORIGINS",
+                  "https://min-bok.github.io,http://localhost:3000,http://127.0.0.1:3000",
+              ).strip(),
+          }
+          for key, value in variables.items():
+              if value:
+                  api.add_space_variable(repo_id=repo_id, key=key, value=value, token=token)
+
           upload_folder(
               repo_id=repo_id,
               repo_type="space",
@@ -67,7 +89,7 @@ jobs:
               path_in_repo=".",
               token=token,
               commit_message="chore: deploy Manufacturing Insight AI",
-              ignore_patterns=["**/__pycache__/**", "**/*.pyc", "**/*.db"],
+              ignore_patterns=["**/__pycache__/**", "**/*.pyc", "**/*.db", "**/.env", "**/.env.local"],
           )
-          print(f"Deployed → https://huggingface.co/spaces/{repo_id}")
+          print(f"Deployed https://huggingface.co/spaces/{repo_id}")
           PY

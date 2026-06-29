@@ -162,14 +162,16 @@ npm run dev
 
 GitHub Actions 워크플로 `Deploy Backend to Hugging Face Spaces`를 사용합니다.
 
-1. Hugging Face에서 Access Token을 생성합니다.
+1. Hugging Face에서 Write 권한 Access Token을 생성합니다.
 2. GitHub 저장소의 `Settings > Secrets and variables > Actions > Secrets`에 `HF_TOKEN`을 추가합니다.
-3. GitHub Actions에서 `Deploy Backend to Hugging Face Spaces` 워크플로를 수동 실행합니다.
-4. 기본 Space ID는 `min-bok/manufacturing-insight-ai-api`입니다.
-5. 배포가 완료되면 백엔드 URL은 다음 형식이 됩니다.
+3. Gemini를 사용할 경우 같은 Secrets 위치에 `GEMINI_API_KEY`도 추가합니다. 이 값은 코드에 포함하지 않고 Hugging Face Space Secret으로만 동기화됩니다.
+4. 필요한 경우 `Settings > Secrets and variables > Actions > Variables`에 `GEMINI_MODEL`, `LLM_DAILY_USER_LIMIT`, `LLM_DAILY_GLOBAL_LIMIT`, `LLM_MAX_OUTPUT_TOKENS`, `CORS_ORIGINS`를 추가합니다.
+5. `main` 브랜치에 push하면 `Deploy to Hugging Face Spaces` 워크플로가 자동 실행됩니다. 수동 실행도 가능합니다.
+6. Space ID는 `min-bok/manufacturing-insight-ai`입니다.
+7. 배포가 완료되면 백엔드 URL은 다음 형식이 됩니다.
 
 ```text
-https://min-bok-manufacturing-insight-ai-api.hf.space
+https://min-bok-manufacturing-insight-ai.hf.space
 ```
 
 Hugging Face 무료 Space는 사용하지 않을 때 sleep 될 수 있습니다. 첫 접속 시 응답이 느릴 수 있지만, 자동 과금 없이 포트폴리오 시연용으로 사용하기 좋습니다.
@@ -183,7 +185,7 @@ GitHub Actions 워크플로 `Deploy Frontend to GitHub Pages`를 사용합니다
 3. 값은 Hugging Face Spaces 백엔드 URL로 설정합니다.
 
 ```text
-NEXT_PUBLIC_API_BASE_URL=https://min-bok-manufacturing-insight-ai-api.hf.space
+NEXT_PUBLIC_API_BASE_URL=https://min-bok-manufacturing-insight-ai.hf.space
 ```
 
 기본값도 위 URL로 설정되어 있어, Space ID를 그대로 사용한다면 별도 변수 없이 Pages 빌드가 가능합니다.
