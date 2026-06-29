@@ -137,7 +137,7 @@ def _call_gemini(result: QueryResponse) -> dict[str, Any]:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.urlopen(request, timeout=settings.gemini_timeout_seconds) as response:
             body = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         if exc.code == 429:
